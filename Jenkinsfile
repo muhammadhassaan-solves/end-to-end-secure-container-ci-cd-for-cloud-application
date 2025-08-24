@@ -6,11 +6,17 @@ pipeline {
     }
     stages {
         stage('Checkout') {
-            steps { checkout scm }
+            steps {
+                checkout scm
+            }
         }
+
         stage('Test') {
-            steps { sh 'npm test' }
+            steps {
+                sh 'npm test'
+            }
         }
+
         stage('Build Docker Image') {
             steps {
                 script {
@@ -18,19 +24,18 @@ pipeline {
                 }
             }
         }
+
         stage('Security Scan') {
-            agent {
-                docker {
-                    image 'aquasec/trivy:latest'
-                    args '-v /var/run/docker.sock:/var/run/docker.sock'
-                }
-            }
             steps {
                 sh '''
-                trivy image --exit-code 0 --severity HIGH,CRITICAL ${DOCKER_IMAGE}:${BUILD_NUMBER} || true
+                docker run --rm \
+                  -v /var/run/docker.sock:/var/run/docker.sock \
+                  aquasec/trivy:latest image \
+                  --exit-code 0 --severity HIGH,CRITICAL ${DOCKER_IMAGE}:${BUILD_NUMBER} || true
                 '''
             }
         }
+
         stage('Push to Docker Hub') {
             steps {
                 script {
@@ -42,6 +47,7 @@ pipeline {
                 }
             }
         }
+
         stage('Deploy to Staging') {
             steps {
                 sh '''
