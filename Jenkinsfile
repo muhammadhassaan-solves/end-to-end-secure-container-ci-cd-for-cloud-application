@@ -12,7 +12,14 @@ pipeline {
         }
 
         stage('Test') {
+            agent {
+                docker {
+                    image 'node:16-alpine'
+                    args '-v /var/run/docker.sock:/var/run/docker.sock'
+                }
+            }
             steps {
+                sh 'npm install'
                 sh 'npm test'
             }
         }
