@@ -1,7 +1,7 @@
 pipeline {
     agent any
     environment {
-        DOCKER_IMAGE = 'muhammadhassaansolves/docker-cicd-demo' 
+        DOCKER_IMAGE = 'muhammadhassaansolves/docker-cicd-demo'
         DOCKER_CREDENTIALS = 'dockerhub-credentials'
     }
     stages {
@@ -19,8 +19,16 @@ pipeline {
             }
         }
         stage('Security Scan') {
+            agent {
+                docker {
+                    image 'aquasec/trivy:latest'
+                    args '-v /var/run/docker.sock:/var/run/docker.sock'
+                }
+            }
             steps {
-                sh 'trivy image --exit-code 0 --severity HIGH,CRITICAL ${DOCKER_IMAGE}:${BUILD_NUMBER} || true'
+                sh '''
+                trivy image --exit-code 0 --severity HIGH,CRITICAL ${DOCKER_IMAGE}:${BUILD_NUMBER} || true
+                '''
             }
         }
         stage('Push to Docker Hub') {
