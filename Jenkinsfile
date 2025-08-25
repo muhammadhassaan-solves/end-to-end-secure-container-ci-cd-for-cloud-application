@@ -5,7 +5,6 @@ pipeline {
         DOCKER_CREDENTIALS = 'dockerhub-credentials'
         EC2_USER = 'ubuntu'
         EC2_IP = '3.82.229.176'
-        EC2_SSH_CREDENTIALS = 'ec2-ssh-key'
     }
     stages {
         stage('Checkout') {
@@ -60,7 +59,7 @@ pipeline {
 
         stage('Deploy to EC2') {
             steps {
-                sshagent(['env.EC2_SSH_CREDENTIALS']) {
+                sshagent(['ec2-ssh-key']) {
                     sh """
                     ssh -o StrictHostKeyChecking=no ${EC2_USER}@${EC2_IP} '
                       docker stop docker-cicd-staging || true
