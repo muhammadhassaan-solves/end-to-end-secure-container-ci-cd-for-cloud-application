@@ -3,6 +3,9 @@ pipeline {
     environment {
         DOCKER_IMAGE = 'muhammadhassaansolves/docker-cicd-demo'
         DOCKER_CREDENTIALS = 'dockerhub-credentials'
+        EC2_USER = 'ubuntu'
+        EC2_IP = '3.82.229.176'
+        EC2_SSH_CREDENTIALS = 'ec2-ssh-key'
     }
     stages {
         stage('Checkout') {
@@ -55,15 +58,20 @@ pipeline {
             }
         }
 
-        stage('Deploy to Staging') {
+        stage('Deploy to EC2') {
             steps {
-                sh '''
-                docker stop docker-cicd-staging || true
-                docker rm docker-cicd-staging || true
-                docker run -d --name docker-cicd-staging -p 3001:3000 ${DOCKER_IMAGE}:${BUILD_NUMBER}
-                sleep 10
-                curl -f http://localhost:3001/health
-                '''
+                sshagent([EC2_SSH_CREDENTIALS]) {
+                    sh """
+                    ssh -o StrictHostKeyChecking=no ${EC2_USER}@${EC2_IP} '
+                      docker stop docker-cicd-staging || true
+                      docker rm docker-cicd-staging || true
+                      docker pull ${DOCKER_IMAGE}:${BUILD_NUMBER}
+                      docker run -d --name docker-cicd-staging -p 3001:3000 ${DOCKER_IMAGE}:${BUILD_NUMBER}
+                      sleep 10
+                      curl -f http://localhost:3001/health
+                    '
+                    """
+                }
             }
         }
     }
